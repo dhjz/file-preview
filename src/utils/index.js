@@ -24,6 +24,9 @@ export async function loadScriptWithProgress(url, onProgress) {
         throw new Error(`Failed to load script: ${url}`)
     }
     
+    const contentEncoding = response.headers.get('content-encoding')
+    const isCompressed = contentEncoding && contentEncoding.includes('gzip')
+    
     const contentLength = response.headers.get('content-length')
     const total = contentLength ? parseInt(contentLength, 10) : 0
     
@@ -39,8 +42,18 @@ export async function loadScriptWithProgress(url, onProgress) {
         loaded += value.length
         
         if (onProgress) {
-            const percent = total > 0 ? Math.round((loaded / total) * 100) : 0
-            onProgress({ percent, loaded, total })
+            let percent = 0
+            if (isCompressed) {
+                percent = Math.min(99, Math.round((loaded / (total * 3)) * 100))
+            } else if (total > 0) {
+                percent = Math.round((loaded / total) * 100)
+            }
+            onProgress({ 
+                percent, 
+                loaded, 
+                total: isCompressed ? loaded : total,
+                isCompressed 
+            })
         }
     }
     
@@ -52,7 +65,7 @@ export async function loadScriptWithProgress(url, onProgress) {
         script.src = blobUrl
         script.onload = () => {
             URL.revokeObjectURL(blobUrl)
-            onProgress && onProgress({ percent: 100, loaded: total, total })
+            onProgress && onProgress({ percent: 100, loaded, total: loaded })
             resolve()
         }
         script.onerror = () => {

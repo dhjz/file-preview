@@ -12,6 +12,7 @@
             <div class="progress-bar">
                 <div class="progress-fill" :style="{ width: loadingProgress + '%' }"></div>
             </div>
+            <div class="loading-tip">{{ loadTip }}</div>
         </div>
         <VueOfficeDocx
             v-if="fileType === 'docx'"
@@ -82,6 +83,7 @@ export default {
     data() {
         return {
             fileType: '',
+            loadTip: '',
             fileUrl: '',
             inputUrl: '',
             inputProxy: '',
@@ -168,7 +170,7 @@ export default {
                 }
             } catch (error) {
                 console.error('加载组件失败:', error)
-                alert('加载组件失败，请检查网络连接或组件配置')
+                this.loadTip = '加载组件失败，请检查网络连接或组件配置'
             } finally {
                 this.loading = false
                 this.loadingProgress = 0
@@ -323,6 +325,12 @@ export default {
     background: linear-gradient(90deg, #409eff 0%, #66b1ff 100%);
     border-radius: 3px;
     transition: width 0.3s ease;
+}
+
+.loading-tip {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #ff4949;
 }
 
 .no-preview {
