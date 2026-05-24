@@ -58,16 +58,16 @@ import VueOfficeDocx from '@vue-office/docx'
 import '@vue-office/docx/lib/index.css'
 
 const componentMap = {
-    xlsx: () => import('@vue-office/excel').then(m => m.default),
-    xls: () => import('@vue-office/excel').then(m => m.default),
+    xlsx: async () => {
+        await import('@vue-office/excel/lib/index.css')
+        return import('@vue-office/excel').then(m => m.default)
+    },
+    xls: async () => {
+        await import('@vue-office/excel/lib/index.css')
+        return import('@vue-office/excel').then(m => m.default)
+    },
     pdf: () => import('@vue-office/pdf').then(m => m.default)
 }
-
-// const cssMap = {
-//     xlsx: '@vue-office/excel/lib/index.css',
-//     xls: '@vue-office/excel/lib/index.css',
-//     pdf: null
-// }
 
 export default {
     name: 'IndexView',
@@ -142,7 +142,6 @@ export default {
         },
         async loadComponent(type) {
             this.loading = true
-            // this.loadCss(type)
             const loader = componentMap[type]
             if (loader) {
                 const comp = await loader()
@@ -150,15 +149,6 @@ export default {
                 this.loading = false
             }
         },
-        // loadCss(type) {
-        //     const cssPath = cssMap[type]
-        //     if (cssPath && !document.querySelector(`link[href*="${cssPath}"]`)) {
-        //         const link = document.createElement('link')
-        //         link.rel = 'stylesheet'
-        //         link.href = cssPath
-        //         document.head.appendChild(link)
-        //     }
-        // },
         getFileTypeFromUrl(url) {
             const match = url.match(/\.([a-z]+)(\?|$)/i)
             return match ? match[1].toLowerCase() : ''
@@ -187,9 +177,9 @@ export default {
             }
             
             this.excelOptions = {
-                xls: params.get('xls') === 'true',
-                minColLength: params.get('minColLength') ? Number(params.get('minColLength')) : 0,
-                minRowLength: params.get('minRowLength') ? Number(params.get('minRowLength')) : 0,
+                xls: this.fileType === 'xls' || params.get('xls') === 'true',
+                minColLength: params.get('minColLength') ? Number(params.get('minColLength')) : 26,
+                minRowLength: params.get('minRowLength') ? Number(params.get('minRowLength')) : 200,
                 widthOffset: params.get('widthOffset') ? Number(params.get('widthOffset')) : 10,
                 heightOffset: params.get('heightOffset') ? Number(params.get('heightOffset')) : 10
             }
