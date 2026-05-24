@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => {
       })
     )
   }
+
+  const indexHash = Math.random().toString(32).slice(-3)
+  const chunkHash = Math.random().toString(32).slice(-3)
   
   return {
     base: './',
@@ -51,21 +54,22 @@ export default defineConfig(({ mode }) => {
       cssCodeSplit: false,
       rollupOptions: {
         output: {
-          entryFileNames: 'assets/index-[hash].js',
-          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: `assets/index-${indexHash}.js`, // index-${indexHash}
+          chunkFileNames: 'assets/[name].js',
           manualChunks(id) {
             if (id.includes('@vue-office/excel')) {
-              return 'excel'
+              return `excel-${chunkHash}`
             }
             if (id.includes('@vue-office/pdf')) {
-              return 'pdf'
+              return `pdf-${chunkHash}`
             }
-            if (id.includes('node_modules/vue/') || 
-                id.includes('node_modules/vue-demi/') || 
-                id.includes('node_modules/vue-router/') ||
-                id.includes('node_modules/@vue/')) {
-              return 'vue-vendor'
-            }
+            // if (id.includes('node_modules/vue/') || 
+            //     id.includes('node_modules/vue-demi/') || 
+            //     id.includes('node_modules/vue-router/') ||
+            //     id.includes('node_modules/@vue/')) {
+            //   return `index-${indexHash}`
+            // }
+            return `index-${indexHash}`
           }
         }
       }
