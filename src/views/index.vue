@@ -21,6 +21,14 @@
             @rendered="renderedHandler"
             @error="errorHandler"
         />
+        <div v-else-if="unsupportedFormat" class="unsupported-format">
+            <div class="unsupported-content">
+                <div class="unsupported-icon">⚠️</div>
+                <div class="unsupported-text">当前格式不支持在线预览, 请下载文件到本地打开</div>
+                <a :href="fileUrl" class="download-link" download target="_blank">点击下载文件</a>
+                <button class="close-btn" @click="closePage">关闭当前页面</button>
+            </div>
+        </div>
         <div v-else class="no-preview">
             <div class="input-area">
                 <input
@@ -111,6 +119,11 @@ export default {
                 pdf: this.pdfOptions
             }
             return optionsMap[this.fileType] || {}
+        },
+        unsupportedFormat() {
+            if (!this.fileUrl) return false
+            const supportedFormats = ['docx', 'xlsx', 'xls', 'pdf']
+            return this.fileType && !supportedFormats.includes(this.fileType)
         }
     },
     mounted() {
@@ -202,6 +215,9 @@ export default {
         },
         errorHandler() {
             console.log('渲染失败')
+        },
+        closePage() {
+            window.close()
         }
     }
 }
@@ -316,5 +332,67 @@ export default {
     background: #e9e9eb;
     border-radius: 3px;
     color: #606266;
+}
+
+.unsupported-format {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f5f7fa;
+}
+
+.unsupported-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 60px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.unsupported-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.unsupported-text {
+    font-size: 18px;
+    color: #303133;
+    margin-bottom: 24px;
+}
+
+.download-link {
+    display: inline-block;
+    padding: 12px 32px;
+    font-size: 14px;
+    color: #fff;
+    background: #409eff;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-bottom: 16px;
+    transition: background 0.2s;
+}
+
+.download-link:hover {
+    background: #66b1ff;
+}
+
+.close-btn {
+    padding: 10px 28px;
+    font-size: 14px;
+    color: #606266;
+    background: #fff;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    color: #409eff;
+    border-color: #c6e2ff;
+    background: #ecf5ff;
 }
 </style>
