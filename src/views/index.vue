@@ -4,6 +4,10 @@
             <a :href="fileUrl" class="action-btn download" download target="_blank">下载</a>
             <div class="action-btn close" @click="closePage">关闭</div>
         </div>
+        <div v-show="loading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在加载预览组件...</div>
+        </div>
         <VueOfficeDocx
             v-if="fileType === 'docx'"
             :src="previewUrl"
@@ -12,10 +16,6 @@
             @rendered="renderedHandler"
             @error="errorHandler"
         />
-        <div v-else-if="loading" class="loading-container">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">正在加载预览组件...</div>
-        </div>
         <component
             v-else-if="currentComponent"
             :is="currentComponent"
@@ -67,18 +67,7 @@
 <script>
 import VueOfficeDocx from '@vue-office/docx'
 import '@vue-office/docx/lib/index.css'
-
-// const componentMap = {
-//     xlsx: async () => {
-//         await import('@vue-office/excel/lib/index.css')
-//         return import('@vue-office/excel').then(m => m.default)
-//     },
-//     xls: async () => {
-//         await import('@vue-office/excel/lib/index.css')
-//         return import('@vue-office/excel').then(m => m.default)
-//     },
-//     pdf: () => import('@vue-office/pdf').then(m => m.default)
-// }
+import { loadOfficeComponent } from '@/utils'
 
 export default {
     name: 'IndexView',
@@ -156,15 +145,20 @@ export default {
                 this.loadComponent(this.fileType)
             }
         },
-        loadComponent(type) {
+        async loadComponent(type) {
             this.loading = true
-            const componentMap = {
-                xlsx: 'VueOfficeExcel',
-                xls: 'VueOfficeExcel',
-                pdf: 'VueOfficePdf'
+            try {
+                const component = await loadOfficeComponent(type)
+                if (component) {
+                    console.log('加载组件完成', type, component, this.currentOptions, this.previewUrl);
+                    this.currentComponent = component
+                }
+            } catch (error) {
+                console.error('加载组件失败:', error)
+                alert('加载组件失败，请检查网络连接或组件配置')
+            } finally {
+                this.loading = false
             }
-            this.currentComponent = componentMap[type] || ''
-            this.loading = false
         },
         getFileTypeFromUrl(url) {
             const match = url.match(/\.([a-z]+)(\?|$)/i)
@@ -272,6 +266,11 @@ export default {
     align-items: center;
     height: 100vh;
     background: #f5f7fa;
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
 }
 
 .loading-spinner {
