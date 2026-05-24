@@ -1,6 +1,6 @@
 <template>
     <div class="preview-container">
-        <vue-office-docx
+        <VueOfficeDocx
             v-if="fileType === 'docx'"
             :src="previewUrl"
             :options="docxOptions"
@@ -8,18 +8,15 @@
             @rendered="renderedHandler"
             @error="errorHandler"
         />
-        <vue-office-excel
-            v-else-if="fileType === 'xlsx' || fileType === 'xls'"
+        <div v-else-if="loading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在加载预览组件...</div>
+        </div>
+        <component
+            v-else-if="currentComponent"
+            :is="currentComponent"
             :src="previewUrl"
-            :options="excelOptions"
-            style="height: 100vh;"
-            @rendered="renderedHandler"
-            @error="errorHandler"
-        />
-        <vue-office-pdf
-            v-else-if="fileType === 'pdf'"
-            :src="previewUrl"
-            :options="pdfOptions"
+            :options="currentOptions"
             style="height: 100vh;"
             @rendered="renderedHandler"
             @error="errorHandler"
@@ -56,19 +53,26 @@
 </template>
 
 <script>
+import { shallowRef } from 'vue'
 import VueOfficeDocx from '@vue-office/docx'
-import VueOfficeExcel from '@vue-office/excel'
-import VueOfficePdf from '@vue-office/pdf'
 import '@vue-office/docx/lib/index.css'
-import '@vue-office/excel/lib/index.css'
-import { nextTick } from 'vue'
+
+const componentMap = {
+    xlsx: () => import('@vue-office/excel').then(m => m.default),
+    xls: () => import('@vue-office/excel').then(m => m.default),
+    pdf: () => import('@vue-office/pdf').then(m => m.default)
+}
+
+// const cssMap = {
+//     xlsx: '@vue-office/excel/lib/index.css',
+//     xls: '@vue-office/excel/lib/index.css',
+//     pdf: null
+// }
 
 export default {
     name: 'IndexView',
     components: {
-        VueOfficeDocx,
-        VueOfficeExcel,
-        VueOfficePdf
+        VueOfficeDocx
     },
     data() {
         return {
@@ -76,6 +80,8 @@ export default {
             fileUrl: '',
             inputUrl: '',
             inputProxy: '',
+            currentComponent: shallowRef(null),
+            loading: false,
             pdfOptions: {},
             docxOptions: {},
             excelOptions: {
@@ -96,6 +102,15 @@ export default {
                 return this.proxyUrl + encodeURIComponent(this.fileUrl)
             }
             return this.fileUrl
+        },
+        currentOptions() {
+            const optionsMap = {
+                docx: this.docxOptions,
+                xlsx: this.excelOptions,
+                xls: this.excelOptions,
+                pdf: this.pdfOptions
+            }
+            return optionsMap[this.fileType] || {}
         }
     },
     mounted() {
@@ -113,21 +128,37 @@ export default {
             this.inputUrl = this.fileUrl || cachedUrl
             this.inputProxy = this.proxyUrl || cachedProxy
             
-            this.parseOptions(params)
-            console.log('this.fileType,', this.fileType);
-            console.log('this.fileUrl,', this.fileUrl);
-            console.log('this.pdfOptions,', this.pdfOptions);
-            console.log('this.docxOptions,', this.docxOptions);
-            console.log('this.excelOptions,', this.excelOptions);
-
-            nextTick(() => console.log('this.previewUrl', this.previewUrl))
-
             let type = params.get('type')
             if (!type && this.fileUrl) {
                 type = this.getFileTypeFromUrl(this.fileUrl)
             }
             this.fileType = type || ''
+            
+            this.parseOptions(params)
+            
+            if (this.fileType && componentMap[this.fileType]) {
+                this.loadComponent(this.fileType)
+            }
         },
+        async loadComponent(type) {
+            this.loading = true
+            // this.loadCss(type)
+            const loader = componentMap[type]
+            if (loader) {
+                const comp = await loader()
+                this.currentComponent = comp
+                this.loading = false
+            }
+        },
+        // loadCss(type) {
+        //     const cssPath = cssMap[type]
+        //     if (cssPath && !document.querySelector(`link[href*="${cssPath}"]`)) {
+        //         const link = document.createElement('link')
+        //         link.rel = 'stylesheet'
+        //         link.href = cssPath
+        //         document.head.appendChild(link)
+        //     }
+        // },
         getFileTypeFromUrl(url) {
             const match = url.match(/\.([a-z]+)(\?|$)/i)
             return match ? match[1].toLowerCase() : ''
@@ -190,6 +221,36 @@ export default {
 .preview-container {
     width: 100%;
     height: 100vh;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f5f7fa;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e4e7ed;
+    border-top-color: #409eff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #606266;
 }
 
 .no-preview {
