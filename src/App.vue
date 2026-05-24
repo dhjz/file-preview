@@ -21,6 +21,7 @@ export default {
     padding: 0;
     box-sizing: border-box;
 }
+[v-cloak]{display:none}
 
 #app-wrapper {
     width: 100%;

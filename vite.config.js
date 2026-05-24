@@ -53,24 +53,24 @@ export default defineConfig(({ mode }) => {
       },
       cssCodeSplit: false,
       rollupOptions: {
+        external: ['vue', 'vue-demi'],
         output: {
-          entryFileNames: `assets/index-${indexHash}.js`, // index-${indexHash}
-          chunkFileNames: 'assets/[name].js',
-          manualChunks(id) {
-            if (id.includes('@vue-office/excel')) {
-              return `excel-${chunkHash}`
-            }
-            if (id.includes('@vue-office/pdf')) {
-              return `pdf-${chunkHash}`
-            }
-            // if (id.includes('node_modules/vue/') || 
-            //     id.includes('node_modules/vue-demi/') || 
-            //     id.includes('node_modules/vue-router/') ||
-            //     id.includes('node_modules/@vue/')) {
-            //   return `index-${indexHash}`
-            // }
-            return `index-${indexHash}`
-          }
+          format: 'iife',
+          entryFileNames: `assets/index-${indexHash}.js`,
+          // chunkFileNames: 'assets/[name].js',
+          globals: {
+            'vue': 'Vue',
+            'vue-demi': 'VueDemi'
+          },
+          // manualChunks(id) {
+          //   if (id.includes('@vue-office/excel')) {
+          //     return `excel-${chunkHash}`
+          //   }
+          //   if (id.includes('@vue-office/pdf')) {
+          //     return `pdf-${chunkHash}`
+          //   }
+          //   return `index-${indexHash}`
+          // }
         }
       }
     }

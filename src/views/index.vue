@@ -65,17 +65,17 @@ import { shallowRef } from 'vue'
 import VueOfficeDocx from '@vue-office/docx'
 import '@vue-office/docx/lib/index.css'
 
-const componentMap = {
-    xlsx: async () => {
-        await import('@vue-office/excel/lib/index.css')
-        return import('@vue-office/excel').then(m => m.default)
-    },
-    xls: async () => {
-        await import('@vue-office/excel/lib/index.css')
-        return import('@vue-office/excel').then(m => m.default)
-    },
-    pdf: () => import('@vue-office/pdf').then(m => m.default)
-}
+// const componentMap = {
+//     xlsx: async () => {
+//         await import('@vue-office/excel/lib/index.css')
+//         return import('@vue-office/excel').then(m => m.default)
+//     },
+//     xls: async () => {
+//         await import('@vue-office/excel/lib/index.css')
+//         return import('@vue-office/excel').then(m => m.default)
+//     },
+//     pdf: () => import('@vue-office/pdf').then(m => m.default)
+// }
 
 export default {
     name: 'IndexView',
@@ -149,16 +149,20 @@ export default {
             
             this.parseOptions(params)
             
-            if (this.fileType && componentMap[this.fileType]) {
+            if (this.fileType && ['xlsx', 'xls', 'pdf'].includes(this.fileType)) {
                 this.loadComponent(this.fileType)
             }
         },
-        async loadComponent(type) {
+        loadComponent(type) {
             this.loading = true
-            const loader = componentMap[type]
-            if (loader) {
-                const comp = await loader()
-                this.currentComponent = comp
+            const componentMap = {
+                xlsx: 'VueOfficeExcel',
+                xls: 'VueOfficeExcel',
+                pdf: 'VueOfficePdf'
+            }
+            const componentName = componentMap[type]
+            if (componentName) {
+                this.currentComponent = shallowRef(this.$options.components[componentName] || componentName)
                 this.loading = false
             }
         },
