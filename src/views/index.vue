@@ -1,5 +1,9 @@
 <template>
     <div class="preview-container">
+        <div v-if="currentComponent" class="action-buttons">
+            <a :href="fileUrl" class="action-btn download" download target="_blank">下载</a>
+            <div class="action-btn close" @click="closePage">关闭</div>
+        </div>
         <VueOfficeDocx
             v-if="fileType === 'docx'"
             :src="previewUrl"
@@ -32,7 +36,7 @@
         <div v-else class="no-preview">
             <div class="input-area">
                 <input
-                    v-model="inputProxy"
+                    v-model.trim="inputProxy"
                     type="text"
                     class="url-input proxy-input"
                     placeholder="代理地址（可选，解决跨域）"
@@ -40,7 +44,7 @@
             </div>
             <div class="input-area">
                 <input
-                    v-model="inputUrl"
+                    v-model.trim="inputUrl"
                     type="text"
                     class="url-input"
                     placeholder="请输入文件URL地址"
@@ -61,7 +65,6 @@
 </template>
 
 <script>
-import { shallowRef } from 'vue'
 import VueOfficeDocx from '@vue-office/docx'
 import '@vue-office/docx/lib/index.css'
 
@@ -88,7 +91,7 @@ export default {
             fileUrl: '',
             inputUrl: '',
             inputProxy: '',
-            currentComponent: shallowRef(null),
+            currentComponent: null,
             loading: false,
             pdfOptions: {},
             docxOptions: {},
@@ -132,8 +135,8 @@ export default {
     methods: {
         parseUrlParams() {
             const params = new URLSearchParams(window.location.search)
-            this.fileUrl = params.get('url') || ''
-            this.proxyUrl = params.get('proxy') || window.proxyUrl || ''
+            this.fileUrl = (params.get('url') || '').trim()
+            this.proxyUrl = (params.get('proxy') || window.proxyUrl || '').trim()
             
             const cachedUrl = localStorage.getItem('preview_url') || ''
             const cachedProxy = localStorage.getItem('preview_proxy') || ''
@@ -141,7 +144,7 @@ export default {
             this.inputUrl = this.fileUrl || cachedUrl
             this.inputProxy = this.proxyUrl || cachedProxy
             
-            let type = params.get('type')
+            let type = (params.get('type') || '').trim()
             if (!type && this.fileUrl) {
                 type = this.getFileTypeFromUrl(this.fileUrl)
             }
@@ -160,11 +163,8 @@ export default {
                 xls: 'VueOfficeExcel',
                 pdf: 'VueOfficePdf'
             }
-            const componentName = componentMap[type]
-            if (componentName) {
-                this.currentComponent = shallowRef(this.$options.components[componentName] || componentName)
-                this.loading = false
-            }
+            this.currentComponent = componentMap[type] || ''
+            this.loading = false
         },
         getFileTypeFromUrl(url) {
             const match = url.match(/\.([a-z]+)(\?|$)/i)
@@ -231,7 +231,39 @@ export default {
 .preview-container {
     width: 100%;
     height: 100vh;
+    position: relative;
 }
+
+.action-buttons {
+    position: fixed;
+    top: 10px;
+    right: 30px;
+    display: flex;
+    gap: 12px;
+    z-index: 1000;
+    opacity: .8;
+}
+
+.action-btn {
+    padding: 4px 8px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+}
+
+.action-btn.download {
+    color: #fff;
+    background: #409eff;
+}
+
+.action-btn.close {
+    color: #333;
+    background: #ddd;
+}
+
 
 .loading-container {
     display: flex;
