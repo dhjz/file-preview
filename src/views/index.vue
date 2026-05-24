@@ -129,6 +129,7 @@ export default {
         this.parseUrlParams()
     },
     methods: {
+        formatSize,
         parseUrlParams() {
             const params = new URLSearchParams(window.location.search)
             this.fileUrl = (params.get('url') || '').trim()
