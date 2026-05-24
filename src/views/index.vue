@@ -6,7 +6,12 @@
         </div>
         <div v-show="loading" class="loading-container">
             <div class="loading-spinner"></div>
-            <div class="loading-text">正在加载预览组件...</div>
+            <div class="loading-text">
+                正在加载预览组件<span v-if="loadingTotal > 0">（{{ formatSize(loadingTotal) }}）</span>... {{ loadingProgress }}%
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: loadingProgress + '%' }"></div>
+            </div>
         </div>
         <VueOfficeDocx
             v-if="fileType === 'docx'"
@@ -67,7 +72,7 @@
 <script>
 import VueOfficeDocx from '@vue-office/docx'
 import '@vue-office/docx/lib/index.css'
-import { loadOfficeComponent } from '@/utils'
+import { loadOfficeComponent, formatSize } from '@/utils'
 
 export default {
     name: 'IndexView',
@@ -82,6 +87,8 @@ export default {
             inputProxy: '',
             currentComponent: null,
             loading: false,
+            loadingProgress: 0,
+            loadingTotal: 0,
             pdfOptions: {},
             docxOptions: {},
             excelOptions: {
@@ -147,8 +154,13 @@ export default {
         },
         async loadComponent(type) {
             this.loading = true
+            this.loadingProgress = 0
+            this.loadingTotal = 0
             try {
-                const component = await loadOfficeComponent(type)
+                const component = await loadOfficeComponent(type, (progress) => {
+                    this.loadingProgress = progress.percent
+                    this.loadingTotal = progress.total
+                })
                 if (component) {
                     console.log('加载组件完成', type, component, this.currentOptions, this.previewUrl);
                     this.currentComponent = component
@@ -158,6 +170,8 @@ export default {
                 alert('加载组件失败，请检查网络连接或组件配置')
             } finally {
                 this.loading = false
+                this.loadingProgress = 0
+                this.loadingTotal = 0
             }
         },
         getFileTypeFromUrl(url) {
@@ -216,7 +230,7 @@ export default {
         },
         closePage() {
             window.close()
-        }
+        },
     }
 }
 </script>
@@ -292,6 +306,22 @@ export default {
     margin-top: 16px;
     font-size: 14px;
     color: #606266;
+}
+
+.progress-bar {
+    width: 300px;
+    height: 6px;
+    background: #e4e7ed;
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #409eff 0%, #66b1ff 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
 }
 
 .no-preview {
