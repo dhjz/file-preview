@@ -1,6 +1,6 @@
 <template>
     <div class="preview-container">
-        <div v-if="currentComponent" class="action-buttons">
+        <div v-if="currentComponent || fileType === 'docx'" class="action-buttons">
             <a :href="fileUrl" class="action-btn download" download target="_blank">下载</a>
             <div class="action-btn close" @click="closePage">关闭</div>
         </div>
