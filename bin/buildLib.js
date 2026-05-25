@@ -11,7 +11,7 @@ const originalCwd = process.cwd()
 const tempDir = path.join(rootDir, '.temp-build')
 const libDir = path.join(rootDir, 'public/lib')
 
-const libs = [
+const allLibs = [
   {
     name: 'excel',
     package: '@vue-office/excel',
@@ -25,12 +25,62 @@ const libs = [
     globalName: 'VueOfficePdf',
     outputFile: 'vue-office-pdf.js',
     css: ''
+  },
+  {
+    name: 'ofd',
+    package: '@vue-office/ofd',
+    importPath: '../components/ofd/index.js',
+    globalName: 'VueOfficeOfd',
+    outputFile: 'vue-office-ofd.js',
+    css: ''
   }
 ]
 
+function parseArgs() {
+  const args = process.argv.slice(2)
+  const result = { libs: [] }
+  
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]
+    if (arg.startsWith('--lib=')) {
+      const libNames = arg.slice(6).split(',').map(n => n.trim())
+      result.libs = libNames
+    } else if (arg === '--lib' && i + 1 < args.length) {
+      const libNames = args[i + 1].split(',').map(n => n.trim())
+      result.libs = libNames
+      i++
+    } else if (!arg.startsWith('--')) {
+      result.libs.push(arg)
+    }
+  }
+  
+  return result
+}
+
+function getTargetLibs() {
+  const args = parseArgs()
+  
+  if (args.libs.length === 0) {
+    return allLibs
+  }
+  
+  const targetLibs = args.libs.map(libName => {
+    const found = allLibs.find(lib => lib.name === libName)
+    if (!found) {
+      console.error(`❌ 未找到库: ${libName}`)
+      console.log(`可用的库: ${allLibs.map(l => l.name).join(', ')}`)
+      process.exit(1)
+    }
+    return found
+  })
+  
+  return targetLibs
+}
+
 function getEntryContent(lib) {
   const cssImport = lib.css ? `import '${lib.css}'\n` : ''
-  return `import ${lib.globalName} from '${lib.package}'
+  const importPath = lib.importPath || lib.package
+  return `import ${lib.globalName} from '${importPath}'
 ${cssImport}
 export default ${lib.globalName}
 `
@@ -76,7 +126,7 @@ export default defineConfig({
 `
 }
 
-function createTempFiles() {
+function createTempFiles(libs) {
   console.log('📝 创建临时文件...')
   
   const srcLibDir = path.join(rootDir, 'src/lib')
@@ -96,7 +146,7 @@ function createTempFiles() {
   })
 }
 
-function deleteTempFiles() {
+function deleteTempFiles(libs) {
   console.log('\n🗑️  删除临时文件...')
   
   libs.forEach(lib => {
@@ -120,7 +170,7 @@ function deleteTempFiles() {
   }
 }
 
-function copyToLib() {
+function copyToLib(libs) {
   console.log('\n📋 复制文件到 public/lib...')
   
   if (!fs.existsSync(libDir)) {
@@ -158,8 +208,16 @@ function buildLib(lib) {
 }
 
 function build() {
+  const libs = getTargetLibs()
+  
+  if (libs.length === 1) {
+    console.log(`\n🎯 打包单个库: ${libs[0].name}`)
+  } else {
+    console.log(`\n📦 打包 ${libs.length} 个库: ${libs.map(l => l.name).join(', ')}`)
+  }
+  
   try {
-    createTempFiles()
+    createTempFiles(libs)
     
     process.chdir(rootDir)
     
@@ -170,7 +228,7 @@ function build() {
     
     libs.forEach(lib => buildLib(lib))
     
-    copyToLib()
+    copyToLib(libs)
     
     console.log('\n✅ 打包完成！')
   } catch (error) {
@@ -178,7 +236,7 @@ function build() {
     process.exit(1)
   } finally {
     process.chdir(originalCwd)
-    deleteTempFiles()
+    deleteTempFiles(libs)
     deleteTempDir()
   }
 }

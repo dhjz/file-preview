@@ -123,3 +123,22 @@ http://localhost:5173/?url=https://example.com/protected.pdf&password=123456
 - [vue-office 官方文档](https://github.com/501351981/vue-office)
 - [Vue 3 官方文档](https://cn.vuejs.org/)
 - [Vite 官方文档](https://cn.vitejs.dev/)
+
+## 打包库
+```sh
+# 打包所有库
+npm run buildlib
+
+# 只打包单个库
+npm run buildlib excel
+npm run buildlib pdf
+npm run buildlib ofd
+
+# 使用 --lib 参数
+npm run buildlib --lib=excel
+npm run buildlib --lib pdf
+
+# 打包多个库（用逗号分隔）
+npm run buildlib --lib=excel,pdf
+npm run buildlib --lib excel,ofd
+```
