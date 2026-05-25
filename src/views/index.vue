@@ -17,7 +17,8 @@
         <VueOfficeDocx
             v-if="fileType === 'docx'"
             :src="previewUrl"
-            :options="docxOptions"
+            :options="options"
+            :request-options="fetchOptions"
             style="height: 100vh;"
             @rendered="renderedHandler"
             @error="errorHandler"
@@ -26,7 +27,9 @@
             v-else-if="currentComponent"
             :is="currentComponent"
             :src="previewUrl"
-            :options="currentOptions"
+            :options="options"
+            :request-options="fetchOptions"
+            :staticFileUrl="staticFileUrl"
             style="height: 100vh;"
             @rendered="renderedHandler"
             @error="errorHandler"
@@ -57,6 +60,7 @@
                     @keyup.enter="handlePreview"
                 />
                 <button class="preview-btn" @click="handlePreview">预览</button>
+                <button class="preview-btn" @click="handlePreview(true)" title="信息放入sessionStorage">无痕预览</button>
             </div>
             <div class="tip">预览URL地址必须以http或https开头, 例如: <code>{{ lpath }}test.pdf</code></div>
             <div class="help-info">
@@ -65,6 +69,7 @@
                 <p>PDF: <code title="预览宽度">width</code> <code title="请求头">httpHeaders</code> <code title="加密密码">password</code></p>
                 <p>DOCX: <code title="样式类名前缀">className</code> <code title="启用文档包装器">inWrapper</code> <code title="忽略页面宽度">ignoreWidth</code> <code title="忽略页面高度">ignoreHeight</code> <code title="启用分页">breakPages</code> <code title="调试模式">debug</code></p>
                 <p>Excel: <code title="是否xls格式">xls</code> <code title="最少渲染列数">minColLength</code> <code title="最少渲染行数">minRowLength</code> <code title="宽度偏移量">widthOffset</code> <code title="高度偏移量">heightOffset</code></p>
+                <p>高级选项(URL参数): <code title="直接传入渲染选项对象(JSON字符串,需URL encode 编码,优先级低于组件属性)">options</code> <code title="fetch请求配置对象(JSON字符串,需encode)">fetchOptions</code></p>
             </div>
         </div>
     </div>
@@ -81,6 +86,7 @@ export default {
         VueOfficeDocx
     },
     data() {
+        const currPath = location.href.substring(0, location.href.lastIndexOf('/') + 1)
         return {
             fileType: '',
             loadTip: '',
@@ -91,17 +97,11 @@ export default {
             loading: false,
             loadingProgress: 0,
             loadingTotal: 0,
-            pdfOptions: {},
-            docxOptions: {},
-            excelOptions: {
-                xls: false,
-                minColLength: 0,
-                minRowLength: 0,
-                widthOffset: 10,
-                heightOffset: 10
-            },
+            fetchOptions: {},
+            options: {},
             proxyUrl: window.proxyUrl || '',
-            lpath: location.href.substring(0, location.href.lastIndexOf('/') + 1),
+            lpath: currPath,
+            staticFileUrl: `${currPath}lib/`
         }
     },
     computed: {
@@ -112,15 +112,6 @@ export default {
             }
             return this.fileUrl
         },
-        currentOptions() {
-            const optionsMap = {
-                docx: this.docxOptions,
-                xlsx: this.excelOptions,
-                xls: this.excelOptions,
-                pdf: this.pdfOptions
-            }
-            return optionsMap[this.fileType] || {}
-        },
         unsupportedFormat() {
             if (!this.fileUrl) return false
             const supportedFormats = ['docx', 'xlsx', 'xls', 'pdf']
@@ -129,13 +120,26 @@ export default {
     },
     mounted() {
         this.parseUrlParams()
+        console.log('this.staticFileUrl', this.staticFileUrl);
     },
     methods: {
         formatSize,
         parseUrlParams() {
-            const params = new URLSearchParams(window.location.search)
-            this.fileUrl = (params.get('url') || '').trim()
-            this.proxyUrl = (params.get('proxy') || window.proxyUrl || '').trim()
+            let params = Object.fromEntries(new URLSearchParams(location.search))
+            this.fileUrl = (params.url || params.u || '').trim()
+            if (!this.fileUrl && sessionStorage.getItem('preview_office')) {
+                try {
+                    let params = JSON.parse(sessionStorage.getItem('preview_office'))
+                    this.fileUrl = (params.url || params.u || '').trim()
+                } catch (e) {
+                    console.warn('Failed to parse fetchOptions JSON:', e)
+                } finally {
+                    if (!location.hash.includes('preview')) {
+                        sessionStorage.removeItem('preview_office')
+                    }
+                }
+            }
+            this.proxyUrl = (params.proxy || window.proxyUrl || '').trim()
             
             const cachedUrl = localStorage.getItem('preview_url') || ''
             const cachedProxy = localStorage.getItem('preview_proxy') || ''
@@ -143,13 +147,19 @@ export default {
             this.inputUrl = this.fileUrl || cachedUrl
             this.inputProxy = this.proxyUrl || cachedProxy
             
-            let type = (params.get('type') || '').trim()
+            let type = (params.type || '').trim()
             if (!type && this.fileUrl) {
                 type = this.getFileTypeFromUrl(this.fileUrl)
             }
             this.fileType = type || ''
             
             this.parseOptions(params)
+
+             this.parseFetchOptions(params)
+
+             console.log('this.options', this.options);
+             console.log('this.fetchOptions', this.fetchOptions);
+             console.log('this.previewUrl', this.previewUrl, this.fileUrl);
             
             if (this.fileType && ['xlsx', 'xls', 'pdf'].includes(this.fileType)) {
                 this.loadComponent(this.fileType)
@@ -165,7 +175,7 @@ export default {
                     this.loadingTotal = progress.total
                 })
                 if (component) {
-                    console.log('加载组件完成', type, component, this.currentOptions, this.previewUrl);
+                    console.log('加载组件完成', type, component, this.previewUrl);
                     this.currentComponent = component
                 }
             } catch (error) {
@@ -182,42 +192,72 @@ export default {
             return match ? match[1].toLowerCase() : ''
         },
         parseOptions(params) {
-            this.pdfOptions = {
-                width: params.get('width') ? Number(params.get('width')) : undefined,
-                httpHeaders: params.get('httpHeaders') ? JSON.parse(params.get('httpHeaders')) : {},
-                password: params.get('password') || ''
+            let jsonOptions = {}
+            const optionsStr = params.options
+            if (optionsStr) {
+                try {
+                    jsonOptions = typeof optionsStr === 'string' ? JSON.parse(optionsStr) : optionsStr
+                } catch (e) {
+                    console.warn('Failed to parse options JSON:', e)
+                }
             }
-            
-            this.docxOptions = {
-                className: params.get('className') || 'docx',
-                inWrapper: params.get('inWrapper') !== 'false',
-                ignoreWidth: params.get('ignoreWidth') === 'true',
-                ignoreHeight: params.get('ignoreHeight') === 'true',
-                ignoreFonts: params.get('ignoreFonts') === 'true',
-                breakPages: params.get('breakPages') !== 'false',
-                ignoreLastRenderedPageBreak: params.get('ignoreLastRenderedPageBreak') === 'true',
-                experimental: params.get('experimental') === 'true',
-                trimXmlDeclaration: params.get('trimXmlDeclaration') !== 'false',
-                useBase64URL: params.get('useBase64URL') === 'true',
-                useMathMLPolyfill: params.get('useMathMLPolyfill') === 'true',
-                showChanges: params.get('showChanges') === 'true',
-                debug: params.get('debug') === 'true'
+            let manOptions = {
+                // PDF 选项
+                width: params.width ? Number(params.width) : undefined,
+                httpHeaders: params.httpHeaders ? JSON.parse(params.httpHeaders) : {},
+                password: params.password || '',
+                // DOCX 选项
+                className: params.className || 'docx',
+                inWrapper: params.inWrapper !== 'false',
+                ignoreWidth: params.ignoreWidth === 'true',
+                ignoreHeight: params.ignoreHeight === 'true',
+                ignoreFonts: params.ignoreFonts === 'true',
+                breakPages: params.breakPages !== 'false',
+                ignoreLastRenderedPageBreak: params.ignoreLastRenderedPageBreak === 'true',
+                experimental: params.experimental === 'true',
+                trimXmlDeclaration: params.trimXmlDeclaration !== 'false',
+                useBase64URL: params.useBase64URL === 'true',
+                useMathMLPolyfill: params.useMathMLPolyfill === 'true',
+                showChanges: params.showChanges === 'true',
+                debug: params.debug === 'true',
+                // Excel 选项
+                xls: this.fileType === 'xls' || params.xls === 'true',
+                minColLength: params.minColLength ? Number(params.minColLength) : 26,
+                minRowLength: params.minRowLength ? Number(params.minRowLength) : 200,
+                widthOffset: params.widthOffset ? Number(params.widthOffset) : 10,
+                heightOffset: params.heightOffset ? Number(params.heightOffset) : 10
             }
-            
-            this.excelOptions = {
-                xls: this.fileType === 'xls' || params.get('xls') === 'true',
-                minColLength: params.get('minColLength') ? Number(params.get('minColLength')) : 26,
-                minRowLength: params.get('minRowLength') ? Number(params.get('minRowLength')) : 200,
-                widthOffset: params.get('widthOffset') ? Number(params.get('widthOffset')) : 10,
-                heightOffset: params.get('heightOffset') ? Number(params.get('heightOffset')) : 10
+            this.options = { ...jsonOptions, ...manOptions }
+        },
+        parseFetchOptions(params) {
+            const fetchOptionsStr = params.fetchOptions
+            if (fetchOptionsStr) {
+                try {
+                    this.fetchOptions = typeof fetchOptionsStr === 'string' ? JSON.parse(fetchOptionsStr) : fetchOptionsStr
+                } catch (e) {
+                    console.warn('Failed to parse fetchOptions JSON:', e)
+                }
+            }
+            const fetchOptionsKey = params.fetchOptionsKey || 'fetchOptionsKey'
+            if (localStorage.getItem(fetchOptionsKey)) {
+                try {
+                    this.fetchOptions = JSON.parse(localStorage.getItem(fetchOptionsKey))
+                } catch (e) {
+                    console.warn('Failed to parse fetchOptions JSON:', e)
+                }
             }
         },
-        handlePreview() {
+        handlePreview(isPure) {
             if (!this.inputUrl) return
             localStorage.setItem('preview_url', this.inputUrl)
             localStorage.setItem('preview_proxy', this.inputProxy || '')
             
             const type = this.getFileTypeFromUrl(this.inputUrl)
+            const proxy = this.inputProxy || ''
+            if (isPure === true) {
+                sessionStorage.setItem('preview_office', JSON.stringify({ url: this.inputUrl, type, proxy }))
+                return window.open('#preview')
+            }
             const url = new URL(window.location.href)
             url.searchParams.set('url', this.inputUrl)
             if (this.inputProxy) {
