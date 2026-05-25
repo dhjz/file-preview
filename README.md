@@ -8,7 +8,7 @@
 - <img src="https://gcore.jsdelivr.net/gh/dhjz/file-preview@main/appimg/app2.jpg" style="width: 340px;"/>
 
 - 项目地址: [https://github.com/dhjz/file-preview]( https://github.com/dhjz/file-preview)  
-- 预览地址: [https://dhjz.github.io/file-preview/](https://dhjz.github.io/file-preview/)
+- 预览地址: [https://dhjz.github.io/file-preview/dist/](https://dhjz.github.io/file-preview/dist/)
 
 ## 支持的文件格式
 
