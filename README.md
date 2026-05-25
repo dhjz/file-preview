@@ -14,7 +14,7 @@
 
 - **Word 文档**: `.docx`
 - **Excel 表格**: `.xlsx`, `.xls`
-- **PDF 文档**: `.pdf`
+- **PDF 文档**: `.pdf`, 使用请解压`lib/cmaps.zip` 到 `lib/cmaps`
 
 ## 快速开始
 
