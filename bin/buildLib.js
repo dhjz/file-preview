@@ -94,12 +94,15 @@ function getViteConfigContent(lib, isFirst) {
       relativeCSSInjection: true
     })
   ]`
-    : '[vue()]'
+    : `[vue(),
+    cssInjectedByJsPlugin({
+      relativeCSSInjection: true
+    })]`
 
   return `import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-${lib.css ? "import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'" : ''}
+${lib.css ||!lib.css ? "import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'" : ''}
 
 export default defineConfig({
   plugins: ${plugins},
