@@ -64,7 +64,7 @@
             </div>
             <div class="tip">预览URL地址必须以http或https开头, 例如: <code>{{ lpath }}test.pdf</code></div>
             <div class="help-info">
-                <p>支持的文件类型: <code>docx</code> <code>xlsx</code> <code>xls</code> <code>pdf</code></p>
+                <p>支持的文件类型: <code>docx</code> <code>xlsx</code> <code>xls</code> <code>pdf</code> <code>ofd</code></p>
                 <p>URL参数: <code title="文件地址">url</code>(必传) <code title="文件类型">type</code>(可选) <code title="代理地址">proxy</code>(解决跨域)</p>
                 <p>PDF: <code title="预览宽度">width</code> <code title="请求头">httpHeaders</code> <code title="加密密码">password</code></p>
                 <p>DOCX: <code title="样式类名前缀">className</code> <code title="启用文档包装器">inWrapper</code> <code title="忽略页面宽度">ignoreWidth</code> <code title="忽略页面高度">ignoreHeight</code> <code title="启用分页">breakPages</code> <code title="调试模式">debug</code></p>
@@ -114,7 +114,7 @@ export default {
         },
         unsupportedFormat() {
             if (!this.fileUrl) return false
-            const supportedFormats = ['docx', 'xlsx', 'xls', 'pdf']
+            const supportedFormats = ['docx', 'xlsx', 'xls', 'pdf', 'ofd']
             return this.fileType && !supportedFormats.includes(this.fileType)
         }
     },
@@ -161,7 +161,7 @@ export default {
              console.log('this.fetchOptions', this.fetchOptions);
              console.log('this.previewUrl', this.previewUrl, this.fileUrl);
             
-            if (this.fileType && ['xlsx', 'xls', 'pdf'].includes(this.fileType)) {
+            if (this.fileType && ['xlsx', 'xls', 'pdf', 'ofd'].includes(this.fileType)) {
                 this.loadComponent(this.fileType)
             }
         },
@@ -202,6 +202,8 @@ export default {
                 }
             }
             let manOptions = {
+                // OFD 选项
+                width: params.width ? Number(params.width) : undefined,
                 // PDF 选项
                 width: params.width ? Number(params.width) : undefined,
                 httpHeaders: params.httpHeaders ? JSON.parse(params.httpHeaders) : {},

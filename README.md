@@ -1,6 +1,6 @@
 # Vue3 文档预览组件演示
 
-基于 Vue 3 的在线文档预览解决方案，支持 Word、Excel、PDF 等多种文档格式的在线预览。
+基于 Vue 3 的在线文档预览解决方案，支持 Word、Excel、PDF、OFD 等多种文档格式的在线预览。
 
 # 其他说明
 - 页面效果图见`appimg`目录
@@ -15,6 +15,7 @@
 - **Word 文档**: `.docx`
 - **Excel 表格**: `.xlsx`, `.xls`
 - **PDF 文档**: `.pdf`, 使用请解压`lib/cmaps.zip` 到 `lib/cmaps`
+- **OFD 文档**: `.ofd`
 
 ## 快速开始
 

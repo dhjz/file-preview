@@ -102,12 +102,17 @@ export async function loadOfficeComponent(type, onProgress) {
             const module = await import('@vue-office/pdf')
             // onProgress && onProgress(100)
             return module.default
+        } else if (type === 'ofd') {
+            const module = await import('@/components/ofd/index.js')
+            // onProgress && onProgress(100)
+            return module.default
         }
     } else {
         const scriptMap = {
             xlsx: './lib/vue-office-excel.js',
             xls: './lib/vue-office-excel.js',
-            pdf: './lib/vue-office-pdf.js'
+            pdf: './lib/vue-office-pdf.js',
+            ofd: './lib/vue-office-ofd.js'
         }
         
         const url = scriptMap[type]
@@ -118,7 +123,8 @@ export async function loadOfficeComponent(type, onProgress) {
         const globalMap = {
             xlsx: 'VueOfficeExcel',
             xls: 'VueOfficeExcel',
-            pdf: 'VueOfficePdf'
+            pdf: 'VueOfficePdf',
+            ofd: 'VueOfficeOfd'
         }
         
         const globalName = globalMap[type]
