@@ -1,6 +1,6 @@
 # Vue3 文档预览组件演示
 
-基于 Vue 3 的在线文档预览解决方案，支持 Word、Excel、PDF、OFD 等多种文档格式的在线预览。
+基于 Vue 3 的在线文档预览解决方案，支持 Word、Excel、PDF 等多种文档格式的在线预览, 下载dist目录部署到和后端同域就行。
 
 # 其他说明
 - 页面效果图见`appimg`目录
@@ -8,7 +8,7 @@
 - <img src="https://gcore.jsdelivr.net/gh/dhjz/file-preview@main/appimg/app2.jpg" style="width: 340px;"/>
 
 - 项目地址: [https://github.com/dhjz/file-preview]( https://github.com/dhjz/file-preview)  
-- 预览地址: [https://dhjz.github.io/file-preview/](https://dhjz.github.io/file-preview/)
+- 预览地址: [https://dhjz.github.io/file-preview/dist/](https://dhjz.github.io/file-preview/dist/)
 
 ## 支持的文件格式
 
