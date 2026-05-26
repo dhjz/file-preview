@@ -61,6 +61,7 @@
                 />
                 <button class="preview-btn" @click="handlePreview">预览</button>
                 <button class="preview-btn" @click="handlePreview(true)" title="信息放入sessionStorage">无痕预览</button>
+                <button class="preview-btn normal" @click="handleUpload" title="上传文件">上传</button>
             </div>
             <div class="tip">预览URL地址必须以http或https开头, 例如: <code>{{ lpath }}test.pdf</code></div>
             <div class="help-info">
@@ -72,6 +73,7 @@
                 <p>高级选项(URL参数): <code title="直接传入渲染选项对象(JSON字符串,需URL encode 编码,优先级低于组件属性)">options</code> <code title="fetch请求配置对象(JSON字符串,需encode)">fetchOptions</code></p>
             </div>
         </div>
+        <input type="file" id="upload-input" style="display: none" @change="handleChange"/>
     </div>
 </template>
 
@@ -121,9 +123,29 @@ export default {
     mounted() {
         this.parseUrlParams()
         console.log('this.staticFileUrl', this.staticFileUrl);
+        document.addEventListener('dragover', (e) => e.preventDefault())
+        document.addEventListener('drop', (e) => {
+            e.preventDefault()
+            this.handleFile(e.dataTransfer.files?.[0])
+        })
     },
     methods: {
         formatSize,
+        handleUpload() {
+            document.getElementById('upload-input').click()
+        },
+        handleChange(e) {
+            this.handleFile(e.target.files?.[0])
+        },
+        handleFile(file) {
+            if (!file) return;
+            this.fileType = this.getFileTypeFromUrl(file.name)
+            if (['docx', 'xlsx', 'xls', 'pdf', 'ofd'].includes(this.fileType)) {
+                this.fileUrl = file
+                this.loadComponent(this.fileType)
+            }
+            console.log('drop file', file, this.fileType, this.fileUrl);
+        },
         parseUrlParams() {
             let params = Object.fromEntries(new URLSearchParams(location.search))
             this.fileUrl = (params.url || params.u || '').trim()
@@ -394,10 +416,12 @@ export default {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .proxy-input {
-    width: 534px;
+    width: 450px;
 }
 
 .url-input {
@@ -421,18 +445,23 @@ export default {
 
 .preview-btn {
     height: 40px;
-    padding: 0 24px;
+    padding: 0 14px;
     font-size: 14px;
     color: #fff;
     background: #409eff;
-    border: none;
+    border: 1px solid #409eff;
     border-radius: 4px;
     cursor: pointer;
-    transition: background 0.2s;
+}
+.preview-btn.normal {
+    background: #fff;
+    color: #555;
+    border: 1px solid #ddd;
 }
 
 .preview-btn:hover {
     background: #66b1ff;
+    color: #fff;
 }
 
 .help-info {
@@ -510,5 +539,17 @@ export default {
     color: #409eff;
     border-color: #c6e2ff;
     background: #ecf5ff;
+}
+
+@media screen and (max-width: 768px) {
+    .proxy-input {
+        width: 90vw;
+    }
+    .url-input {
+        width: 90vw;
+    }
+    .tip {
+        padding: 0 10px;
+    }
 }
 </style>
