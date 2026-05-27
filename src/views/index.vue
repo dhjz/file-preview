@@ -14,6 +14,12 @@
             </div>
             <div class="loading-tip">{{ loadTip }}</div>
         </div>
+        <div v-show="renderLoading" class="loading-container">
+            <div class="loading-wrap">
+                <span class="loading-spinner1"></span>
+                <span>文档加载中...</span>
+            </div>
+        </div>
         <VueOfficeDocx
             v-if="fileType === 'docx'"
             :src="previewUrl"
@@ -99,6 +105,7 @@ export default {
             inputUrl: '',
             inputProxy: '',
             currentComponent: null,
+            renderLoading: false,
             loading: false,
             loadingProgress: 0,
             loadingTotal: 0,
@@ -140,14 +147,17 @@ export default {
         handleChange(e) {
             this.handleFile(e.target.files?.[0])
         },
-        handleFile(file) {
+        async handleFile(file) {
             if (!file) return;
             this.fileType = this.getFileTypeFromUrl(file.name)
             if (ASYNC_VIEW_EXTS.includes(this.fileType)) {
-                this.fileUrl = file
-                this.loadComponent(this.fileType)
+                await this.loadComponent(this.fileType)
             }
+            this.fileUrl = file
             console.log('drop file', file, this.fileType, this.fileUrl);
+             if (['docx'].includes(this.fileType)) {
+                this.renderLoading = true
+            }
         },
         parseUrlParams() {
             let params = Object.fromEntries(new URLSearchParams(location.search))
@@ -188,6 +198,9 @@ export default {
             
             if (this.fileType && ASYNC_VIEW_EXTS.includes(this.fileType)) {
                 this.loadComponent(this.fileType)
+            }
+            if (['docx'].includes(this.fileType)) {
+                this.renderLoading = true
             }
         },
         async loadComponent(type) {
@@ -296,10 +309,12 @@ export default {
         },
         renderedHandler() {
             console.log('渲染完成')
+            this.renderLoading = false
         },
         errorHandler(error) {
             console.log('渲染失败')
             console.error(error)
+            this.renderLoading = false
         },
         closePage() {
             window.close()
@@ -557,5 +572,26 @@ export default {
     .tip {
         padding: 0 10px;
     }
+}
+
+.loading-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ccc;
+    gap: 8px;
+    font-size: 14px;
+}
+.loading-spinner1 {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ccc;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

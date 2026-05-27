@@ -125,12 +125,7 @@ export async function loadOfficeComponent(type, onProgress) {
             pdf: './lib/vue-office-pdf.js',
             ofd: './lib/vue-office-ofd.js'
         }
-        
-        const url = scriptMap[type]
-        if (!url) return null
-        
-        await loadScriptWithProgress(url, onProgress)
-        
+
         const globalMap = {
             xlsx: 'VueOfficeExcel',
             xls: 'VueOfficeExcel',
@@ -139,6 +134,14 @@ export async function loadOfficeComponent(type, onProgress) {
         }
         
         const globalName = globalMap[type]
+        
+        const url = scriptMap[type]
+        if (!url) return null
+        
+        if (window[globalName]) return globalName
+
+        await loadScriptWithProgress(url, onProgress)
+        
         if (window[globalName]) {
             const component = window[globalName].default || window[globalName]
             if (window.appIns && !window.appIns.component[globalName]) {
