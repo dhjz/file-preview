@@ -92,6 +92,17 @@ export async function sleep(ms) {
  }
 
 export async function loadOfficeComponent(type, onProgress) {
+    if (type === 'doc') {
+        const globalName = 'VueOfficeDoc'
+        await loadScriptWithProgress('./lib/vue-office-doc.js', onProgress)
+        if (window[globalName]) {
+            if (window.appIns && !window.appIns.component[globalName]) {
+                window.appIns.component(globalName, window[globalName].default || window[globalName])
+                await sleep(100)
+            }
+        }
+        return globalName
+    }
     if (import.meta.env.DEV) {
         if (type === 'xlsx' || type === 'xls') {
             const module = await import('@vue-office/excel')

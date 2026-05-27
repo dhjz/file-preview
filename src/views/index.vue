@@ -69,6 +69,7 @@
                 <p>URL参数: <code title="文件地址">url</code>(必传) <code title="文件类型">type</code>(可选) <code title="代理地址">proxy</code>(解决跨域)</p>
                 <p>PDF: <code title="预览宽度">width</code> <code title="请求头">httpHeaders</code> <code title="加密密码">password</code></p>
                 <p>DOCX: <code title="样式类名前缀">className</code> <code title="启用文档包装器">inWrapper</code> <code title="忽略页面宽度">ignoreWidth</code> <code title="忽略页面高度">ignoreHeight</code> <code title="启用分页">breakPages</code> <code title="调试模式">debug</code></p>
+                <p>DOC: <code title="自动边距">autoPadding</code></p>
                 <p>Excel: <code title="是否xls格式">xls</code> <code title="最少渲染列数">minColLength</code> <code title="最少渲染行数">minRowLength</code> <code title="宽度偏移量">widthOffset</code> <code title="高度偏移量">heightOffset</code></p>
                 <p>高级选项(URL参数): <code title="直接传入渲染选项对象(JSON字符串,需URL encode 编码,优先级低于组件属性)">options</code> <code title="fetch请求配置对象(JSON字符串,需encode)">fetchOptions</code></p>
             </div>
@@ -81,6 +82,8 @@
 import VueOfficeDocx from '@vue-office/docx'
 import '@vue-office/docx/lib/index.css'
 import { loadOfficeComponent, formatSize } from '@/utils'
+
+const ASYNC_VIEW_EXTS = ['doc', 'xlsx', 'xls', 'pdf', 'ofd']
 
 export default {
     name: 'IndexView',
@@ -116,7 +119,7 @@ export default {
         },
         unsupportedFormat() {
             if (!this.fileUrl) return false
-            const supportedFormats = ['docx', 'xlsx', 'xls', 'pdf', 'ofd']
+            const supportedFormats = ['docx', ...ASYNC_VIEW_EXTS]
             return this.fileType && !supportedFormats.includes(this.fileType)
         }
     },
@@ -140,7 +143,7 @@ export default {
         handleFile(file) {
             if (!file) return;
             this.fileType = this.getFileTypeFromUrl(file.name)
-            if (['docx', 'xlsx', 'xls', 'pdf', 'ofd'].includes(this.fileType)) {
+            if (ASYNC_VIEW_EXTS.includes(this.fileType)) {
                 this.fileUrl = file
                 this.loadComponent(this.fileType)
             }
@@ -183,7 +186,7 @@ export default {
              console.log('this.fetchOptions', this.fetchOptions);
              console.log('this.previewUrl', this.previewUrl, this.fileUrl);
             
-            if (this.fileType && ['xlsx', 'xls', 'pdf', 'ofd'].includes(this.fileType)) {
+            if (this.fileType && ASYNC_VIEW_EXTS.includes(this.fileType)) {
                 this.loadComponent(this.fileType)
             }
         },
@@ -224,6 +227,8 @@ export default {
                 }
             }
             let manOptions = {
+                // DOC 选项
+                autoPadding: params.autoPadding === 'true',
                 // OFD 选项
                 width: params.width ? Number(params.width) : undefined,
                 // PDF 选项
@@ -292,8 +297,9 @@ export default {
         renderedHandler() {
             console.log('渲染完成')
         },
-        errorHandler() {
+        errorHandler(error) {
             console.log('渲染失败')
+            console.error(error)
         },
         closePage() {
             window.close()
