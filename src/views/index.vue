@@ -153,6 +153,9 @@ export default {
             if (ASYNC_VIEW_EXTS.includes(this.fileType)) {
                 await this.loadComponent(this.fileType)
             }
+            if (this.fileType === 'xls') {
+                this.options.xls = true
+            }
             this.fileUrl = file
             console.log('drop file', file, this.fileType, this.fileUrl);
              if (['docx'].includes(this.fileType)) {
